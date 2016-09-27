@@ -238,11 +238,16 @@ terminate(#state{shutdown=Shutdown}, Reason, NbChildren) ->
 %% before the timeout. Unlink so we avoid receiving an extra
 %% message. Then send a shutdown exit signal.
 shutdown_children() ->
+	IsGraceful = application:get_env(mag_http, graceful, false),
+	Strategy = if
+		IsGraceful -> normal;
+		true ->	shutdown
+	end,
 	Pids = get_keys(true),
 	_ = [begin
 		monitor(process, P),
 		unlink(P),
-		exit(P, shutdown)
+		exit(P, Strategy)
 	end || P <- Pids],
 	ok.
 
